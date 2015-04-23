@@ -61,9 +61,20 @@ Bullet.prototype.checkCollision = function() {
 	var collide = false;
 
 	if (this.side !== 1) {
-		if (g_game.player.checkCollisionBullet(this.x, this.y, this.r)) {
+		if (g_g.player.checkCollisionBullet(this.x, this.y, this.r)) {
 			collide = true;
-			g_game.player.damage(this.damage)
+			g_g.player.damage(this.damage);
+			return true;
+		}
+	}
+
+	if (this.side !== 2) {
+		for (var i = 0; i < g_g.enemies.length; ++i) {
+			if (g_g.enemies[i].checkCollisionBullet(this.x, this.y, this.r)) {
+				collide = true;
+				g_g.enemies[i].damage(this.damage);
+				return true;
+			}
 		}
 	}
 
@@ -81,3 +92,8 @@ Bullet.prototype.draw = function() {
 	g_g.ctx.fill();
 	g_g.ctx.stroke();
 };
+
+
+
+
+
