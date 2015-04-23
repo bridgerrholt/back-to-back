@@ -2,8 +2,9 @@
 	A simple bullet.
 */
 
-Bullet = function(side, x, y, dir, r, rMax, rRate, speed, damage) {
-	this.side = side;								// the alliance it's on
+Bullet = function(side, parent, x, y, dir, r, rMax, rRate, speed, attack) {
+	this.side = side;								// alliance it's on
+	this.parent = parent;							// object that shot it
 
 	this.x = x;										// current x position in the world
 	this.y = y;										// current y position in the world
@@ -15,7 +16,7 @@ Bullet = function(side, x, y, dir, r, rMax, rRate, speed, damage) {
 	this.rRate = rRate;								// increase in radius per update
 
 	this.speed = speed;								// current speed
-	this.damage = damage;							// the damage delt to objects
+	this.attack = attack;							// damage delt to objects
 
 	this.delay = 1;									// a delay so that it doesn't spawn far from the shooter
 };
@@ -63,16 +64,17 @@ Bullet.prototype.checkCollision = function() {
 	if (this.side !== 1) {
 		if (g_g.player.checkCollisionBullet(this.x, this.y, this.r)) {
 			collide = true;
-			g_g.player.damage(this.damage);
+			g_g.player.damage(this.attack, this.parent);
 			return true;
 		}
 	}
 
 	if (this.side !== 2) {
-		for (var i = 0; i < g_g.enemies.length; ++i) {
+		for (var i=0; i<g_g.enemies.length; ++i) {
 			if (g_g.enemies[i].checkCollisionBullet(this.x, this.y, this.r)) {
 				collide = true;
-				g_g.enemies[i].damage(this.damage);
+
+				g_g.enemies[i].damage(this.attack, this.parent);
 				return true;
 			}
 		}

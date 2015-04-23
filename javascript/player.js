@@ -11,7 +11,7 @@ Player = function(x, y) {
 	this.xReal = x;									// current x position on the screen
 	this.yReal = y;									// current y position on the screen
 
-	this.amount = 1;								// amount of shooters you're controlling
+	this.comrades = 1;								// amount of shooters you're controlling
 
 	this.dead = false;								// whether dead or not
 	this.hpMax = 200;								// maximum amount of hp
@@ -34,6 +34,10 @@ Player = function(x, y) {
 		eyeReload: "#000"
 	};
 
+
+	this.level = 0;									// current level
+	this.size = 0;									// current size, sets back to 0 at a point
+	this.sizeMax = 30;								// maximum size, when size sets back
 
 	var rMin = 15;
 	var rMax = 30;
@@ -70,6 +74,10 @@ Player.prototype.update = function() {
 		this.shoot();
 
 		this.regenerate();
+
+		return false;
+	} else {
+		return true;
 	}
 };
 
@@ -95,7 +103,7 @@ Player.prototype.shoot = function() {
 	if (this.shootTimer === 0) {
 		if (g_g.mouse.buttons.ld && !g_g.mouse.buttons.lu) {
 			var pos = disDir(this.x, this.y, this.r, this.eyeDir);
-			g_g.bullets.push(new Bullet(this.side, pos.x, pos.y, this.eyeDir,
+			g_g.bullets.push(new Bullet(this.side, this, pos.x, pos.y, this.eyeDir,
 				this.bulletRadius, this.bulletRadiusMax, this.bulletRadiusRate,
 				this.bulletSpeed, this.bulletDamage));
 			this.shootTimer = this.shootTimerMax;
@@ -105,16 +113,31 @@ Player.prototype.shoot = function() {
 	}
 };
 
-Player.prototype.damage = function(damage) {
+Player.prototype.notifyKill = function(target) {
+	if (this.size === this.sizeMax)
+		this.size = 0;
+	else
+		this.size += 1;
+
+	this.r = this.size*(this.rMax-this.rMin)/this.sizeMax + this.rMin;
+	this.eyeRadius = this.size*(this.eyeRadiusMax-this.eyeRadiusMin)/this.sizeMax + this.eyeRadiusMin;
+	this.eyeDis = this.size*(this.eyeDisMax-this.eyeDisMin)/this.sizeMax + this.eyeDisMin;
+
+};
+
+Player.prototype.damage = function(damage, attacker) {
 	this.hp -= damage;
 	if (this.hp <= 0) {
 		this.dead = true;
+		attacker.notifyKill(this);
 	}
-}
+};
 
 Player.prototype.checkCollisionBullet = function(x, y, r) {
 	if (pointDis(this.x, this.y, x, y) <= this.r+r)
 		return true;
+
+	return false;
 };
 
 Player.prototype.regenerate = function() {
@@ -133,6 +156,10 @@ Player.prototype.regenerate = function() {
 };
 
 Player.prototype.draw = function() {
+	this.drawComrade();
+};
+
+Player.prototype.drawComrade = function() {
 	var xReal = this.x-g_g.camera.x;
 	var yReal = this.y-g_g.camera.y;
 

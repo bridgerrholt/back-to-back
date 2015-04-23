@@ -14,7 +14,7 @@ Enemy = function(x, y) {
 	this.speed = 5*g_g.speed;						// speed in pixels per tick
 
 	this.dead = false;								// whether dead or not
-	this.hpMax = 200;								// maximum amount of hp
+	this.hpMax = 1;									// maximum amount of hp
 	this.hp = this.hpMax;							// current amount of hp
 	this.hpRegTimerMax = 10;						// maximum regeneration timer for hp
 	this.hpRegTimer = this.hpRegTimerMax;			// current regeneration timer for hp
@@ -28,6 +28,10 @@ Enemy = function(x, y) {
 	this.bulletRadiusMax = 3;						// maximum radius of fired bullets
 	this.bulletRadiusRate = 0.05;					// increase in radius of fired bullets per update
 	this.bulletDamage = 5;							// damage of fired bullets
+
+	this.attack = 30;								// damage on collision with player
+
+	this.children = 0;								// amount of other objects (such as bullets)
 
 	this.color = {									// all the color information
 		base: "#f00",
@@ -48,10 +52,10 @@ Enemy = function(x, y) {
 	this.eyeRadiusMax = 4;							// maximum eye radius
 
 	this.eyeDisMin =								// minimum eye distance
-		rMin-this.eyeRadiusMin-4;
+		rMin-this.eyeRadiusMin-1;
 	this.eyeDis = this.eyeDisMin;					// current eye distance
 	this.eyeDisMax =								// maximum eye distance
-		rMax-this.eyeRadiusMax-5;
+		rMax-this.eyeRadiusMax-2;
 
 	this.eyeDir = 0;								// current eye direction (in degrees)
 	this.eyeDirSpeed = 4;							// amount of possible degrees changed per update
@@ -67,14 +71,23 @@ Enemy.prototype.update = function() {
 			this.eyePosition();
 		}
 
-		if (pointDis(this.xReal, this.yReal, g_g.player.x, g_g.player.y) > this.r+g_g.player.r) {
+		//if (pointDis(this.xReal, this.yReal, g_g.player.x, g_g.player.y) > this.r+g_g.player.r) {
 			this.move();
-		}
+		//}
+
+		this.checkCollision()
 
 
 		//this.shoot();
 
 		//this.regenerate();
+
+		return false;
+	} else {
+		if (this.children === 0)
+			return true;
+		else
+			return false;
 	}
 };
 
@@ -120,16 +133,37 @@ Enemy.prototype.shoot = function() {
 
 };
 
-Enemy.prototype.damage = function(damage) {
+Enemy.prototype.notifyKill = function(target) {
+
+};
+
+Enemy.prototype.damage = function(damage, attacker) {
 	this.hp -= damage;
 	if (this.hp <= 0) {
 		this.dead = true;
+		attacker.notifyKill(this);
 	}
-}
+};
+
+Enemy.prototype.checkCollision = function() {
+	this.checkCollisionPlayer()
+};
+
+Enemy.prototype.checkCollisionPlayer = function() {
+	if (g_g.player.x+g_g.player.r >= this.x-this.r && g_g.player.x-g_g.player.r < this.x+this.r &&
+		g_g.player.y+g_g.player.r >= this.y-this.r && g_g.player.y-g_g.player.r < this.y+this.r) {
+			g_g.player.damage(this.attack, this);
+			this.dead = true;
+	}
+};
 
 Enemy.prototype.checkCollisionBullet = function(x, y, r) {
-	if (pointDis(this.x, this.y, x, y) <= this.r+r)
-		return true;
+	if (x+r >= this.x-this.r && x-r < this.x+this.r &&
+		y+r >= this.y-this.r && y-r < this.y+this.r) {
+			return true;
+	}
+
+	return false;
 };
 
 Enemy.prototype.regenerate = function() {

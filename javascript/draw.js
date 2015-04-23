@@ -28,7 +28,9 @@ draw = function() {
 			"FPS: " + String(roundFloat(g_g.fps, 1)),
 			"Camera: " + String(roundFloat(g_g.camera.x, 1)) + ", " + String(roundFloat(g_g.camera.y, 1)),
 			"Mouse: " + String(g_g.mouse.x) + ", " + String(g_g.mouse.y),
-			"Bullets: " + String(g_g.bullets.length)
+			"Bullets: " + String(g_g.bullets.length),
+			"Health: " + String(g_g.player.hp) + '/' + String(g_g.player.hpMax) +
+				"  " + String(roundFloat(g_g.player.hp/g_g.player.hpMax*100, 2) + '%')
 		], "#f00", 16, "times", 0, 0);
 	}
 
