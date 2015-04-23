@@ -6,7 +6,16 @@ update = function() {
 	g_g.thisTick = new Date;
 	g_g.fps = 1000/(g_g.thisTick-g_g.lastTick);
 
+	g_g.spawner.update();
+
 	g_g.player.update();
+
+	for (var i=0; i<g_g.enemies.length; ++i) {
+		if (g_g.enemies[i].update()) {
+			g_g.enemies.splice(i, 1);
+			i--;
+		}
+	}
 
 	for (var i=0; i<g_g.bullets.length; ++i) {
 		if (g_g.bullets[i].update()) {

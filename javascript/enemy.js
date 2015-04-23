@@ -1,9 +1,9 @@
 /*
-	The character the user controls.
+	Basic enemies that spawn.
 */
 
-Player = function(x, y) {
-	this.side = 1;									// the alliance it's on
+Enemy = function(x, y) {
+	this.side = 2;									// the alliance it's on
 
 	this.x = x;										// current x position in the world
 	this.y = y;										// current y position in the world
@@ -11,7 +11,7 @@ Player = function(x, y) {
 	this.xReal = x;									// current x position on the screen
 	this.yReal = y;									// current y position on the screen
 
-	this.amount = 1;								// amount of shooters you're controlling
+	this.speed = 5*g_g.speed;						// speed in pixels per tick
 
 	this.dead = false;								// whether dead or not
 	this.hpMax = 200;								// maximum amount of hp
@@ -20,32 +20,32 @@ Player = function(x, y) {
 	this.hpRegTimer = this.hpRegTimerMax;			// current regeneration timer for hp
 	this.hpRegAmount = 10;							// hp regenerated whenever hpRegTimer reaches 0
 
-	this.shootTimerMax = 20;						// delay (in updates) per shot
-	this.shootTimer = 0;							// delay (in updates) per shot
-	this.bulletSpeed = 7;							// speed of fired bullets
+	this.shootFlag = false;							// whether it shoots or not
+	this.shootTimerMax = 5;							// delay (in updates) per shot
+	this.shootTimer = this.shootTimerMax;			// delay (in updates) per shot
+	this.bulletSpeed = 10;							// speed of fired bullets
 	this.bulletRadius = 1;							// starting radius of fired bullets
 	this.bulletRadiusMax = 3;						// maximum radius of fired bullets
 	this.bulletRadiusRate = 0.05;					// increase in radius of fired bullets per update
 	this.bulletDamage = 5;							// damage of fired bullets
 
 	this.color = {									// all the color information
-		base: "#fff",
-		eye: "#f00",
-		eyeReload: "#000"
+		base: "#f00",
+		eye: "#00f"
 	};
 
 
-	var rMin = 15;
-	var rMax = 30;
+	var rMin = 13;
+	var rMax = 26;
 
 	this.rMin = rMin;								// minimum radius
 	this.r = this.rMin;								// current radius
 	this.rMax = rMax;								// maximum radius
 
 
-	this.eyeRadiusMin = 3;							// minimum eye radius
+	this.eyeRadiusMin = 2;							// minimum eye radius
 	this.eyeRadius = this.eyeRadiusMin;				// current eye radius
-	this.eyeRadiusMax = 6;							// maximum eye radius
+	this.eyeRadiusMax = 4;							// maximum eye radius
 
 	this.eyeDisMin =								// minimum eye distance
 		rMin-this.eyeRadiusMin-4;
@@ -58,23 +58,36 @@ Player = function(x, y) {
 
 };
 
-Player.prototype.update = function() {
+Enemy.prototype.update = function() {
 	if (!this.dead) {
 		this.xReal = this.x-g_g.camera.x;
 		this.yReal = this.y-g_g.camera.y;
 
-		if (pointDis(this.xReal, this.yReal, g_g.mouse.x, g_g.mouse.y) > this.r) {
+		if (pointDis(this.xReal, this.yReal, g_g.player.x, g_g.player.y) > this.r) {
 			this.eyePosition();
 		}
 
-		this.shoot();
+		if (pointDis(this.xReal, this.yReal, g_g.player.x, g_g.player.y) > this.r+g_g.player.r) {
+			this.move();
+		}
 
-		this.regenerate();
+
+		//this.shoot();
+
+		//this.regenerate();
 	}
 };
 
-Player.prototype.eyePosition = function() {
-	var newDir = pointDir(this.xReal, this.yReal, g_g.mouse.x, g_g.mouse.y);
+Enemy.prototype.move = function() {
+	var pos = disDir(this.x, this.y, this.speed,
+		pointDir(this.x, this.y, g_g.player.x, g_g.player.y));
+
+	this.x = pos.x;
+	this.y = pos.y;
+};
+
+Enemy.prototype.eyePosition = function() {
+	var newDir = pointDir(this.xReal, this.yReal, g_g.player.x-g_g.camera.x, g_g.player.y-g_g.camera.y);
 
 	if (Math.abs(newDir-this.eyeDir) <= this.eyeDirSpeed ||
 		Math.abs(newDir-this.eyeDir+360) <= this.eyeDirSpeed)
@@ -91,33 +104,35 @@ Player.prototype.eyePosition = function() {
 		this.eyeDir -= 360;
 };
 
-Player.prototype.shoot = function() {
-	if (this.shootTimer === 0) {
-		if (g_g.mouse.buttons.ld && !g_g.mouse.buttons.lu) {
-			var pos = disDir(this.x, this.y, this.r, this.eyeDir);
+Enemy.prototype.shoot = function() {
+
+	if (g_g.mouse.buttons.ld && !g_g.mouse.buttons.lu) {
+		if (this.shootTimer === 0) {
+			var pos = disDir(this.x, this.y, this.r+2, this.eyeDir);
 			g_g.bullets.push(new Bullet(this.side, pos.x, pos.y, this.eyeDir,
 				this.bulletRadius, this.bulletRadiusMax, this.bulletRadiusRate,
 				this.bulletSpeed, this.bulletDamage));
 			this.shootTimer = this.shootTimerMax;
+		} else {
+			this.shootTimer--;
 		}
-	} else {
-		this.shootTimer--;
 	}
+
 };
 
-Player.prototype.damage = function(damage) {
+Enemy.prototype.damage = function(damage) {
 	this.hp -= damage;
 	if (this.hp <= 0) {
 		this.dead = true;
 	}
 }
 
-Player.prototype.checkCollisionBullet = function(x, y, r) {
+Enemy.prototype.checkCollisionBullet = function(x, y, r) {
 	if (pointDis(this.x, this.y, x, y) <= this.r+r)
 		return true;
 };
 
-Player.prototype.regenerate = function() {
+Enemy.prototype.regenerate = function() {
 	if (this.hp < this.hpMax) {
 		if (this.hpRegTimer == 0) {
 			this.hpRegTimer = this.hpRegTimerMax
@@ -132,19 +147,15 @@ Player.prototype.regenerate = function() {
 	}
 };
 
-Player.prototype.draw = function() {
+Enemy.prototype.draw = function() {
 	var xReal = this.x-g_g.camera.x;
 	var yReal = this.y-g_g.camera.y;
 
 	g_g.ctx.fillStyle = this.color.base;
 	g_g.ctx.strokeStyle = this.color.base;
 
-	g_g.ctx.beginPath();
-	g_g.ctx.arc(xReal, yReal,
-		this.r, 0, 2*Math.PI);
-
-	g_g.ctx.fill();
-	g_g.ctx.stroke();
+	g_g.ctx.fillRect(xReal-this.r, yReal-this.r, this.r*2, this.r*2);
+	g_g.ctx.strokeRect(xReal-this.r, yReal-this.r, this.r*2, this.r*2);
 
 
 	g_g.ctx.fillStyle = this.color.eye;

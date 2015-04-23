@@ -10,11 +10,16 @@ draw = function() {
 	g_g.ctx.save();
 	g_g.ctx.translate(0.5, 0.5);
 
+
+	g_g.player.draw();
+
+	for (var i=0; i<g_g.enemies.length; ++i) {
+		g_g.enemies[i].draw();
+	}
+	
 	for (var i=0; i<g_g.bullets.length; ++i) {
 		g_g.bullets[i].draw();
 	}
-
-	g_g.player.draw();
 
 	g_g.camera.draw();
 

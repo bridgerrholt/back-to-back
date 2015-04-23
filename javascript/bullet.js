@@ -2,7 +2,7 @@
 	A simple bullet.
 */
 
-Bullet = function(side, x, y, dir, r, rMax, rRate, speed) {
+Bullet = function(side, x, y, dir, r, rMax, rRate, speed, damage) {
 	this.side = side;								// the alliance it's on
 
 	this.x = x;										// current x position in the world
@@ -15,25 +15,32 @@ Bullet = function(side, x, y, dir, r, rMax, rRate, speed) {
 	this.rRate = rRate;								// increase in radius per update
 
 	this.speed = speed;								// current speed
+	this.damage = damage;							// the damage delt to objects
+
+	this.delay = 1;									// a delay so that it doesn't spawn far from the shooter
 };
 
 Bullet.prototype.update = function() {				// returns true if dead
+	if (this.delay == 0) {
+		if (this.r < this.rMax) {
+			this.r += this.rRate;
 
-	if (this.checkOffScreen()) {
-		return true;
+			if (this.r > this.rMax)
+				this.r = this.rMax;
+		}
+
+		var pos = disDir(this.x, this.y, this.speed, this.dir);
+
+		this.x = pos.x;
+		this.y = pos.y;
+
+		if (this.checkOffScreen() || this.checkCollision()) {
+			return true;
+		}
+
+	} else {
+		this.delay--;
 	}
-
-	if (this.r < this.rMax) {
-		this.r += this.rRate;
-
-		if (this.r > this.rMax)
-			this.r = this.rMax;
-	}
-
-	var pos = disDir(this.x, this.y, this.speed, this.dir);
-
-	this.x = pos.x;
-	this.y = pos.y;
 
 	return false;
 };
@@ -48,7 +55,20 @@ Bullet.prototype.checkOffScreen = function() {		// returns true if off the scree
 	} else {
 		return false;
 	}
-}
+};
+
+Bullet.prototype.checkCollision = function() {
+	var collide = false;
+
+	if (this.side !== 1) {
+		if (g_game.player.checkCollisionBullet(this.x, this.y, this.r)) {
+			collide = true;
+			g_game.player.damage(this.damage)
+		}
+	}
+
+	return collide;
+};
 
 Bullet.prototype.draw = function() {
 	g_g.ctx.fillStyle = "#fff";
