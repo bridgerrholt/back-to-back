@@ -4,9 +4,10 @@
 
 Spawner = function() {
 	this.spawnTimers = [							// [[current, min, max, delay, decrement]]
-		[0, 50, 70, 0, 1],
+		[0, 50, 150, 0, 1],
 		[0, 900, 1000, 0, 1],
-		[0, 100, 200, 2000, 2]];
+		[0, 100, 200, 2000, 2],
+		[0, 100, 500, 3000, 5]];
 
 	for (var i=0; i<this.spawnTimers.length; ++i) {
 		this.spawnTimers[i][1] /= g_g.speed;
