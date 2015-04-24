@@ -3,41 +3,48 @@
 */
 
 Spawner = function() {
-	this.spawnTimerMaxs = [70, 1000];
-	this.spawnTimerMins = [50, 900];
-	this.spawnTimers = [];
+	this.spawnTimers = [							// [[current, min, max, delay, decrement]]
+		[0, 50, 70, 0, 1],
+		[0, 900, 1000, 0, 1],
+		[0, 100, 200, 2000, 2]];
 
-	for (var i=0; i<this.spawnTimerMaxs.length; ++i) {
-		this.spawnTimerMaxs[i] = this.spawnTimerMaxs[i]/g_g.speed;
-		this.spawnTimers.push(this.spawnTimerMaxs[i]);
+	for (var i=0; i<this.spawnTimers.length; ++i) {
+		this.spawnTimers[i][1] /= g_g.speed;
+		this.spawnTimers[i][2] /= g_g.speed;
+		this.spawnTimers[i][3] /= g_g.speed;
+		this.spawnTimers[i][0] = this.spawnTimers[i][2];
 	}
 };
 
 Spawner.prototype.update = function() {
 	for (var i=0; i<this.spawnTimers.length; ++i) {
-		if (this.spawnTimers[i] <= 0) {
-			this.spawnTimerMaxs[i]--;
-			if (this.spawnTimerMaxs[i] < this.spawnTimerMins[i]) {
-				this.spawnTimerMaxs[i] = this.spawnTimerMins[i];
-			}
-			this.spawnTimers[i] = this.spawnTimerMaxs[i];
+		if (this.spawnTimers[i][3] <= 0) {
+			if (this.spawnTimers[i][0] <= 0) {
+				this.spawnTimers[i][2] -= this.spawnTimers[i][4];
+				if (this.spawnTimers[i][2] < this.spawnTimers[i][1]) {
+					this.spawnTimers[i][2] = this.spawnTimers[i][1];
+				}
+				this.spawnTimers[i][0] = this.spawnTimers[i][2];
 
-			var dis;
+				var dis;
 
-			if (pointDis(0, 0, g_g.canvasW/2, g_g.canvasH/2) < 700) {
-				dis = 700;
+				if (pointDis(0, 0, g_g.canvasW/2, g_g.canvasH/2) < 700) {
+					dis = 700;
+				} else {
+					dis = pointDis(0, 0, g_g.canvasW/2, g_g.canvasH/2);
+				}
+
+				var dir = randomRange(0, 360);
+
+				var pos = disDir(0, 0, dis, dir);
+
+				g_g.enemies.push(new Enemy(pos.x, pos.y));
+
 			} else {
-				dis = pointDis(0, 0, g_g.canvasW/2, g_g.canvasH/2);
+				this.spawnTimers[i][0]--;
 			}
-
-			var dir = randomRange(0, 360);
-
-			var pos = disDir(0, 0, dis, dir);
-
-			g_g.enemies.push(new Enemy(pos.x, pos.y));
-
 		} else {
-			this.spawnTimers[i]--;
+			this.spawnTimers[i][3]--;
 		}
 	}
 };

@@ -5,7 +5,7 @@
 Enemy = function(x, y) {
 	this.side = 2;									// alliance it's on
 
-	this.lifeTimer = 60*g_g.speed;					// the minimum amount of ticks alive
+	this.lifeTimer = 60/g_g.speed;					// the minimum amount of ticks alive
 
 	this.x = x;										// current x position in the world
 	this.y = y;										// current y position in the world

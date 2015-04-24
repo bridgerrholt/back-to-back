@@ -49,11 +49,17 @@ Player.prototype.update = function() {
 };
 
 Player.prototype.addComrade = function(comradeFrom) {
-	var dir = 0;
-	var dirChange = 360 / (this.comrades.length+1);
-	var dis = 15 * (this.comrades.length+1);
-
+	var comradeAliveLength = 0;
 	for (var i=0; i<this.comrades.length; ++i) {
+		if (!this.comrades[i].released)
+			comradeAliveLength++;
+	}
+
+	var dir = 0;
+	var dirChange = 360 / (comradeAliveLength+1);
+	var dis = 15 * (comradeAliveLength+1);
+
+	for (var i=0; i<comradeAliveLength; ++i) {
 		this.comrades[i].dirBase = dir;
 		this.comrades[i].dis = dis;
 		dir += dirChange;
@@ -63,14 +69,20 @@ Player.prototype.addComrade = function(comradeFrom) {
 };
 
 Player.prototype.subComrade = function(index) {
+	var comradeAliveLength = 0;
+	for (var i=0; i<this.comrades.length; ++i) {
+		if (!this.comrades[i].released)
+			comradeAliveLength++;
+	}
+
 	if (!this.comrades[index].released) {
 		this.comrades[index].released = true;
 
 		var dir = 0;
-		var dirChange = 360 / (this.comrades.length-1);
-		var dis = 15 * (this.comrades.length-1);
+		var dirChange = 360 / (comradeAliveLength-1);
+		var dis = 15 * (comradeAliveLength-1);
 
-		for (var i=0; i<this.comrades.length; ++i) {
+		for (var i=0; i<comradeAliveLength; ++i) {
 			if (!this.comrades[i].dead) {
 				this.comrades[i].dirBase = dir;
 				this.comrades[i].dis = dis;
