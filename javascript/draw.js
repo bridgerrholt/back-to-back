@@ -23,14 +23,28 @@ draw = function() {
 
 	g_g.camera.draw();
 
+	var comradeHp, comradeHpMax, comradeHpPercent, comradeChildren;
+	if (g_g.player.comrades.length > 0) {
+		comradeHp = g_g.player.comrades[0].hp;
+		comradeHpMax = g_g.player.comrades[0].hpMax;
+		comradeHpPercent = roundFloat(comradeHp/comradeHpMax*100, 2);
+		comradeChildren = g_g.player.comrades[0].children;
+	} else {
+		comradeHp = 0;
+		comradeHpMax = 0;
+		comradeHpPercent = 0.0;
+		comradeChildren = 0;
+	}
+
 	if (g_g.debugText) {
 		drawText(g_g.ctx, [
 			"FPS: " + String(roundFloat(g_g.fps, 1)),
 			"Camera: " + String(roundFloat(g_g.camera.x, 1)) + ", " + String(roundFloat(g_g.camera.y, 1)),
 			"Mouse: " + String(g_g.mouse.x) + ", " + String(g_g.mouse.y),
 			"Bullets: " + String(g_g.bullets.length),
-			"Health: " + String(g_g.player.hp) + '/' + String(g_g.player.hpMax) +
-				"  " + String(roundFloat(g_g.player.hp/g_g.player.hpMax*100, 2) + '%')
+			"Health: " + String(comradeHp) + '/' + String(comradeHpMax) +
+				"  " + String(comradeHpPercent) + '%',
+			"Children: " + String(comradeChildren)
 		], "#f00", 16, "times", 0, 0);
 	}
 

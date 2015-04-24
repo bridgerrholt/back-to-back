@@ -2,9 +2,10 @@
 	A simple bullet.
 */
 
-Bullet = function(side, parent, x, y, dir, r, rMax, rRate, speed, attack) {
+Bullet = function(side, parent, info, x, y, dir, r, rMax, rRate, speed, attack) {
 	this.side = side;								// alliance it's on
 	this.parent = parent;							// object that shot it
+	this.info = info;								// extra info to be passed back to the parent
 
 	this.x = x;										// current x position in the world
 	this.y = y;										// current y position in the world
@@ -36,6 +37,7 @@ Bullet.prototype.update = function() {				// returns true if dead
 		this.y = pos.y;
 
 		if (this.checkOffScreen() || this.checkCollision()) {
+			this.parent.children--;
 			return true;
 		}
 
@@ -62,19 +64,19 @@ Bullet.prototype.checkCollision = function() {
 	var collide = false;
 
 	if (this.side !== 1) {
-		if (g_g.player.checkCollisionBullet(this.x, this.y, this.r)) {
+		if (g_g.player.checkCollisionCircle(this.x, this.y, this.r)) {
 			collide = true;
-			g_g.player.damage(this.attack, this.parent);
+			g_g.player.damage(this.attack, this.parent, this.info);
 			return true;
 		}
 	}
 
 	if (this.side !== 2) {
 		for (var i=0; i<g_g.enemies.length; ++i) {
-			if (g_g.enemies[i].checkCollisionBullet(this.x, this.y, this.r)) {
+			if (g_g.enemies[i].checkCollisionCircle(this.x, this.y, this.r)) {
 				collide = true;
 
-				g_g.enemies[i].damage(this.attack, this.parent);
+				g_g.enemies[i].damage(this.attack, this.parent, this.info);
 				return true;
 			}
 		}

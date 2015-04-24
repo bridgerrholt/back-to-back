@@ -3,7 +3,9 @@
 */
 
 Enemy = function(x, y) {
-	this.side = 2;									// the alliance it's on
+	this.side = 2;									// alliance it's on
+
+	this.lifeTimer = 60*g_g.speed;					// the minimum amount of ticks alive
 
 	this.x = x;										// current x position in the world
 	this.y = y;										// current y position in the world
@@ -35,21 +37,42 @@ Enemy = function(x, y) {
 
 	this.color = {									// all the color information
 		base: "#f00",
-		eye: "#00f"
+		eyePupil: "#222",
+		eyeIris: "#00f"
 	};
+
+
+	this.comradeAmount =							// amount of comrades (catches if it changes)
+		g_g.player.comrades.length
+
+	if (this.comradeAmount === 0) {
+		this.comradeTarget = -1;
+	} else {
+		this.comradeTarget = randomRange (			// index of the comrade it's going for
+			0, this.comradeAmount);
+	}
+
+	var randomPos = {
+		x: randomRange(0, g_g.canvasW),
+		y: randomRange(0, g_g.canvasH)
+	};
+
+	this.dir = pointDir(this.x, this.y,				// the direction to go if there aren't any comrades
+		randomPos.x, randomPos.y);
 
 
 	var rMin = 13;
 	var rMax = 26;
+
 
 	this.rMin = rMin;								// minimum radius
 	this.r = this.rMin;								// current radius
 	this.rMax = rMax;								// maximum radius
 
 
-	this.eyeRadiusMin = 2;							// minimum eye radius
+	this.eyeRadiusMin = 2.5;						// minimum eye radius
 	this.eyeRadius = this.eyeRadiusMin;				// current eye radius
-	this.eyeRadiusMax = 4;							// maximum eye radius
+	this.eyeRadiusMax = 5;							// maximum eye radius
 
 	this.eyeDisMin =								// minimum eye distance
 		rMin-this.eyeRadiusMin-1;
@@ -63,19 +86,47 @@ Enemy = function(x, y) {
 };
 
 Enemy.prototype.update = function() {
+	if (this.lifeTimer > 0)
+		this.lifeTimer--
+
 	if (!this.dead) {
 		this.xReal = this.x-g_g.camera.x;
 		this.yReal = this.y-g_g.camera.y;
 
-		if (pointDis(this.xReal, this.yReal, g_g.player.x, g_g.player.y) > this.r) {
-			this.eyePosition();
+		if (g_g.player.comrades.length !== this.comradeAmount) {
+			this.comradeAmount = g_g.player.comrades.length;
+
+			if (this.comradeAmount === 0) {
+				this.comradeTarget = -1;
+			} else {
+				this.comradeTarget = randomRange(0, this.comradeAmount);
+			}
 		}
 
-		//if (pointDis(this.xReal, this.yReal, g_g.player.x, g_g.player.y) > this.r+g_g.player.r) {
-			this.move();
-		//}
+		if (this.comradeTarget !== -1) {
+			if (pointDis(this.xReal, this.yReal,
+				g_g.player.comrades[this.comradeTarget].x, g_g.player.comrades[this.comradeTarget].y) > this.r) {
+					this.eyePosition();
+			}
 
-		this.checkCollision()
+			//if (pointDis(this.xReal, this.yReal, g_g.player.x, g_g.player.y) > this.r+g_g.player.r) {
+				this.move();
+			//}
+
+			this.checkCollision()
+		} else {
+			var pos = disDir(this.x, this.y, this.speed, this.dir);
+
+			this.x = pos.x;
+			this.y = pos.y;
+
+			this.eyeDir = this.dir;
+
+			if (this.lifeTimer <= 0 && this.checkOffScreen())
+				this.dead = true;
+		}
+
+
 
 
 		//this.shoot();
@@ -92,8 +143,9 @@ Enemy.prototype.update = function() {
 };
 
 Enemy.prototype.move = function() {
-	var pos = disDir(this.x, this.y, this.speed,
-		pointDir(this.x, this.y, g_g.player.x, g_g.player.y));
+	this.dir = pointDir(this.x, this.y,
+		g_g.player.comrades[this.comradeTarget].x, g_g.player.comrades[this.comradeTarget].y);
+	var pos = disDir(this.x, this.y, this.speed, this.dir);
 
 	this.x = pos.x;
 	this.y = pos.y;
@@ -133,15 +185,15 @@ Enemy.prototype.shoot = function() {
 
 };
 
-Enemy.prototype.notifyKill = function(target) {
+Enemy.prototype.notifyKill = function(target, info) {
 
 };
 
-Enemy.prototype.damage = function(damage, attacker) {
+Enemy.prototype.damage = function(damage, attacker, info) {
 	this.hp -= damage;
 	if (this.hp <= 0) {
 		this.dead = true;
-		attacker.notifyKill(this);
+		attacker.notifyKill(this, info);
 	}
 };
 
@@ -150,20 +202,35 @@ Enemy.prototype.checkCollision = function() {
 };
 
 Enemy.prototype.checkCollisionPlayer = function() {
-	if (g_g.player.x+g_g.player.r >= this.x-this.r && g_g.player.x-g_g.player.r < this.x+this.r &&
-		g_g.player.y+g_g.player.r >= this.y-this.r && g_g.player.y-g_g.player.r < this.y+this.r) {
-			g_g.player.damage(this.attack, this);
-			this.dead = true;
+	var comradeCollisions = g_g.player.checkCollisionCircle (
+		this.x, this.y, this.r);
+
+	for (var i=0; i<comradeCollisions.length; ++i) {
+		g_g.player.damage(this.attack, this, comradeCollisions[i]);
+		this.dead = true;
+
 	}
 };
 
-Enemy.prototype.checkCollisionBullet = function(x, y, r) {
+Enemy.prototype.checkCollisionCircle = function(x, y, r) {
 	if (x+r >= this.x-this.r && x-r < this.x+this.r &&
 		y+r >= this.y-this.r && y-r < this.y+this.r) {
 			return true;
 	}
 
 	return false;
+};
+
+Enemy.prototype.checkOffScreen = function() {		// returns true if off the screen
+	var xReal = this.x-g_g.camera.x;
+	var yReal = this.y-g_g.camera.y;
+
+	if (xReal+this.r <= -200 || xReal-this.r > g_g.canvasW+200 ||
+		yReal+this.r <= -200 || yReal-this.r > g_g.canvasH+200) {
+			return true;
+	} else {
+		return false;
+	}
 };
 
 Enemy.prototype.regenerate = function() {
@@ -188,14 +255,23 @@ Enemy.prototype.draw = function() {
 	g_g.ctx.fillStyle = this.color.base;
 	g_g.ctx.strokeStyle = this.color.base;
 
-	g_g.ctx.fillRect(xReal-this.r, yReal-this.r, this.r*2, this.r*2);
-	g_g.ctx.strokeRect(xReal-this.r, yReal-this.r, this.r*2, this.r*2);
+	g_g.ctx.beginPath();
+	g_g.ctx.arc(xReal, yReal,
+		this.r, 0, 2*Math.PI);
+
+	g_g.ctx.fill();
+	g_g.ctx.stroke();
 
 
-	g_g.ctx.fillStyle = this.color.eye;
-	g_g.ctx.strokeStyle = this.color.eye;
+	var pos;
 
-	var pos = disDir(this.xReal, this.yReal, this.eyeDis, this.eyeDir);
+	/*if (this.comradeTarget !== 0)
+		pos = {x: xReal, y: yReal};
+	else*/
+		pos = disDir(this.xReal, this.yReal, this.eyeDis, this.eyeDir);
+
+	g_g.ctx.fillStyle = this.color.eyePupil;
+	g_g.ctx.strokeStyle = this.color.eyePupil;
 
 	g_g.ctx.beginPath();
 	g_g.ctx.arc(pos.x, pos.y,
@@ -203,4 +279,5 @@ Enemy.prototype.draw = function() {
 
 	g_g.ctx.fill();
 	g_g.ctx.stroke();
+
 };

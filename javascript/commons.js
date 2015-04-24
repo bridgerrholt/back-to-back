@@ -40,6 +40,7 @@ g_g.bullets = [];
 function Camera(){}
 function Spawner(){}
 function Player(){}
+function Comrade(){}
 function Enemy(){}
 function Bullet(){}
 
