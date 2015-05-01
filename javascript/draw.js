@@ -3,10 +3,12 @@
 */
 
 draw = function() {
+	// background
 	g_g.ctx.fillStyle = "#000";
 	g_g.ctx.fillRect(0, 0, g_g.canvasW, g_g.canvasH);
 
 
+	// draw
 	g_g.ctx.save();
 	g_g.ctx.translate(0.5, 0.5);
 
@@ -21,8 +23,10 @@ draw = function() {
 		g_g.bullets[i].draw();
 	}
 
-	g_g.camera.draw();
 
+	// draw end
+	g_g.actionQueue.draw();
+	g_g.camera.draw();
 
 	g_g.ctx.textAlign = "right";
 	drawText(g_g.ctx, [

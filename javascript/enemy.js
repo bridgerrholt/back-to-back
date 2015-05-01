@@ -87,7 +87,7 @@ Enemy = function(x, y, level) {
 
 	this.dir = pointDir(this.x, this.y,						// the direction to go if there aren't any comrades
 		randomPos.x, randomPos.y);
-	console.log(randomPos.x, randomPos.y);
+	//console.log(randomPos.x, randomPos.y);
 
 
 	var rMin = 13;

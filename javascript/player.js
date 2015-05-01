@@ -82,7 +82,7 @@ Player.prototype.addComrade = function(comradeFrom) {
 		}
 	}
 
-	console.log(newDir);
+	//console.log(newDir);
 
 	this.comrades.push(new Comrade(this.x, this.y, dis, comradeFrom.dir, dir, this, this.comrades.length));
 };

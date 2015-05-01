@@ -30,6 +30,7 @@ g_g.keyMap = {};						// converts english into array indexes
 
 // reset()
 g_g.spawner = {};
+g_g.actionQueue = {};
 g_g.level;
 
 g_g.player = {};
@@ -41,6 +42,7 @@ g_g.bullets = [];
 // objects
 function Camera(){}
 function Spawner(){}
+function ActionQueue(){}
 function Player(){}
 function Comrade(){}
 function Enemy(){}

@@ -9,6 +9,7 @@ update = function() {
 	g_g.spawner.update();
 
 	g_g.player.update();
+	g_g.actionQueue.update();
 
 	for (var i=0; i<g_g.enemies.length; ++i) {
 		if (g_g.enemies[i].update()) {
