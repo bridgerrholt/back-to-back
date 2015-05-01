@@ -16,6 +16,7 @@ g_g.fps;								// current FPS
 g_g.lastTick;							// milliseconds of the last update
 g_g.thisTick;							// milliseconds of the current update
 g_g.speed;								// the frameRate as compared to 60 FPS (multiply with all speeds)
+g_g.pacing;								// how fast things in the game happen
 g_g.debugText;							// whether or not text for debugging purposes should be drawn
 
 g_g.camera = {};						// data for the single Camera() instance
@@ -29,6 +30,7 @@ g_g.keyMap = {};						// converts english into array indexes
 
 // reset()
 g_g.spawner = {};
+g_g.level;
 
 g_g.player = {};
 g_g.enemies = [];
@@ -43,6 +45,7 @@ function Player(){}
 function Comrade(){}
 function Enemy(){}
 function Bullet(){}
+function RGBColor(){}
 
 // functions
 function pointDir(){}

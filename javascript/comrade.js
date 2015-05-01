@@ -9,7 +9,6 @@ Comrade = function(x, y, dis, dir, dirBase, parent, index) {
 	this.parent = parent;							// owner of the instance (probably g_g.player)
 	this.children = 0;								// amount of objects still alive created from this comrade (must be 0 for deletion)
 
-	this.released = false;							// whether the parent has stopped considering it or not
 
 	this.x = x;										// current x position in the world
 	this.y = y;										// current y position in the world
@@ -28,43 +27,41 @@ Comrade = function(x, y, dis, dir, dirBase, parent, index) {
 
 
 	this.dead = false;								// whether dead or not
+	this.faded = false;								// turns true when fadingAlpha turns 0
+	this.fadingAlpha = 1.0;							// the alpha channel while fading
+	this.released = false;							// whether the parent has stopped considering it or not
+
+	this.hpMax = Math.round(200/g_g.pacing);		// maximum amount of hp
 	this.hpMax = 200;								// maximum amount of hp
+	//this.hpMax = Math.round(50/g_g.pacing);
 	this.hp = this.hpMax;							// current amount of hp
+	this.hpRegTimerMax = 300/g_g.pacing;			// maximum regeneration timer for hp
 	this.hpRegTimerMax = 300;						// maximum regeneration timer for hp
 	this.hpRegTimer = this.hpRegTimerMax;			// current regeneration timer for hp
 	this.hpRegAmount = 10;							// hp regenerated whenever hpRegTimer reaches 0
 
-	this.shootTimerMax = 20;						// delay (in updates) per shot
-	this.shootTimer = 0;							// delay (in updates) per shot
-	this.bulletSpeed = 7;							// speed of fired bullets
+	this.shootTimerMax = 20/g_g.pacing;				// delay (in updates) per shot
+	this.shootTimer = 0;							// current timer for the delay per shot
+	this.bulletSpeed = 7*g_g.pacing;				// speed of fired bullets
 	this.bulletRadius = 1;							// starting radius of fired bullets
 	this.bulletRadiusMax = 3;						// maximum radius of fired bullets
-	this.bulletRadiusRate = 0.05;					// increase in radius of fired bullets per update
-	this.bulletDamage = 5;							// damage of fired bullets
+	this.bulletRadiusRate = 0.05*g_g.pacing;		// increase in radius of fired bullets per update
+	this.bulletDamage = 20;							// damage of fired bullets
 
 	this.color = {									// all the color information
-		base: "#fff",
-		eye: "#f00",
-		eyeReload: "#000"
-	};
-
-	this.colorBase = {								// main color
-		r: 255,
-		g: 255,
-		b: 255,
-		rgb: "RGB(255,255,255)"
-	};
-
-	this.colorBaseDead = {							// main color when dead
-		r: 127,
-		g: 127,
-		b: 127,
-		rgb: "RGB(127,127,127)"
+		base: {
+			min: new RGBColor(127, 127, 127),
+			max: new RGBColor(255, 255, 255)
+		}, eye: {
+			min: new RGBColor(255, 0, 0),
+			max: new RGBColor(255, 0, 0)
+		}
 	};
 
 
 	this.level = 0;									// current level
 	this.size = 0;									// current size, sets back to 0 at a point
+	this.sizeRate = 1*g_g.pacing;					// size increase per kill
 	//this.size = 28;
 	this.sizeMax = 30;								// maximum size, when size sets back
 	this.sizeMax = 20;
@@ -89,7 +86,7 @@ Comrade = function(x, y, dis, dir, dirBase, parent, index) {
 		rMax-this.eyeRadiusMax-5;
 
 	this.eyeDir = this.dir;							// current eye direction (in degrees)
-	this.eyeDirSpeed = 4;							// amount of possible degrees changed per update
+	this.eyeDirSpeed = 4*g_g.speed*g_g.pacing;		// amount of possible degrees changed per update
 
 };
 
@@ -106,7 +103,7 @@ Comrade.prototype.update = function() {
 			pointDir(xParentReal, yParentReal, g_g.mouse.x, g_g.mouse.y) + this.dirBase);
 
 		//if (pointDis(this.xReal, this.yReal, g_g.mouse.x, g_g.mouse.y) > this.r) {
-		if (pointDis(this.xReal, this.yReal, this.mouseAngled.x, this.mouseAngled.y) > this.r &&
+		if (//pointDis(this.xReal, this.yReal, this.mouseAngled.x, this.mouseAngled.y) > this.r &&
 			pointDis(this.parent.x, this.parent.y, g_g.mouse.x, g_g.mouse.y) > this.dis) {
 				this.eyePosition();
 		}
@@ -117,6 +114,12 @@ Comrade.prototype.update = function() {
 
 		return false;
 	} else {
+		this.fadingAlpha -= 0.1;
+		if (this.fadingAlpha <= 0.1) {
+			this.fadingAlpha = 0.0;
+			this.faded = true;
+		}
+
 		return true;
 	}
 };
@@ -158,7 +161,7 @@ Comrade.prototype.eyePosition = function() {
 };
 
 Comrade.prototype.shoot = function() {
-	if (this.shootTimer === 0) {
+	if (this.shootTimer <= 0) {
 		if (g_g.mouse.buttons.ld && !g_g.mouse.buttons.lu) {
 			var pos = disDir(this.x, this.y, this.r, this.eyeDir);
 
@@ -168,7 +171,7 @@ Comrade.prototype.shoot = function() {
 				this.bulletSpeed, this.bulletDamage));
 
 			this.children++;
-			this.shootTimer = this.shootTimerMax;
+			this.shootTimer += this.shootTimerMax;
 		}
 	} else {
 		this.shootTimer--;
@@ -176,24 +179,42 @@ Comrade.prototype.shoot = function() {
 };
 
 Comrade.prototype.notifyKill = function(target, info) {
-	if (this.size >= this.sizeMax) {
-		this.size = 0;
-		this.level++;
-		this.parent.addComrade(this);
-	} else {
-		this.size++;
-	}
+	if (!this.dead) {
+		if (this.size >= this.sizeMax) {
+			this.size -= this.sizeMax;
+			this.levelUp();
+			this.parent.addComrade(this);
+		} else {
+			this.size += this.sizeRate;
+		}
 
-	this.r = this.size*(this.rMax-this.rMin)/this.sizeMax + this.rMin;
-	this.eyeRadius = this.size*(this.eyeRadiusMax-this.eyeRadiusMin)/this.sizeMax + this.eyeRadiusMin;
-	this.eyeDis = this.size*(this.eyeDisMax-this.eyeDisMin)/this.sizeMax + this.eyeDisMin;
+		this.r = this.size*(this.rMax-this.rMin)/this.sizeMax + this.rMin;
+		this.eyeRadius = this.size*(this.eyeRadiusMax-this.eyeRadiusMin)/this.sizeMax + this.eyeRadiusMin;
+		this.eyeDis = this.size*(this.eyeDisMax-this.eyeDisMin)/this.sizeMax + this.eyeDisMin;
+	}
 };
 
+Comrade.prototype.levelUp = function() {
+		this.level++;
+		this.hpMax += 20;
+		this.hp = this.hpMax;
+		this.bulletSpeed += 0.2*g_g.speed;
+		this.bulletRadius += 0.2;
+		this.bulletRadiusRate += 0.01;
+		this.bulletRadiusMax += 0.25;
+		this.bulletDamage += 20;
+		if (this.level%2 === 0 && this.shootTimerMax > 5)
+			this.shootTimerMax -= 1;
+}
+
 Comrade.prototype.damage = function(damage, attacker, info) {
-	this.hp -= damage;
-	if (this.hp <= 0) {
-		this.dead = true;
-		attacker.notifyKill(this, info);
+	if (!this.dead) {
+		this.hp -= damage;
+		if (this.hp <= 0) {
+			this.hp = 0;
+			this.dead = true;
+			attacker.notifyKill(this, info);
+		}
 	}
 };
 
@@ -227,21 +248,22 @@ Comrade.prototype.regenerate = function() {
 };
 
 Comrade.prototype.draw = function() {
+	g_g.ctx.globalAlpha = this.fadingAlpha;
+
 	var xReal = this.x-g_g.camera.x;
 	var yReal = this.y-g_g.camera.y;
 
-	var newColor = {
-		r: Math.round((this.colorBase.r-this.colorBaseDead.r)*this.hp/this.hpMax+this.colorBaseDead.r),
-		g: Math.round((this.colorBase.g-this.colorBaseDead.g)*this.hp/this.hpMax+this.colorBaseDead.g),
-		b: Math.round((this.colorBase.b-this.colorBaseDead.b)*this.hp/this.hpMax+this.colorBaseDead.b),
-		rgb: "RGB(255,255,255)"
-	};
-	newColor.rgb = "RGB(" + String(newColor.r) + ',' + String(newColor.g) + ',' + String(newColor.b) + ')';
+	var baseColor = new RGBColor (
+		Math.round((this.color.base.max.r-this.color.base.min.r)*this.hp/this.hpMax+this.color.base.min.r),
+		Math.round((this.color.base.max.g-this.color.base.min.g)*this.hp/this.hpMax+this.color.base.min.g),
+		Math.round((this.color.base.max.b-this.color.base.min.b)*this.hp/this.hpMax+this.color.base.min.b));
 
 	//g_g.ctx.fillStyle = this.color.base;
-	g_g.ctx.fillStyle = newColor.rgb;
+	g_g.ctx.fillStyle = baseColor.rgb;
 	//g_g.ctx.strokeStyle = this.color.base;
-	g_g.ctx.strokeStyle = newColor.rgb;
+	g_g.ctx.strokeStyle = baseColor.rgb;
+	/*if (this.index == 0)
+		g_g.ctx.strokeStyle = "#f00";*/
 
 	g_g.ctx.beginPath();
 	g_g.ctx.arc(xReal, yReal,
@@ -251,8 +273,8 @@ Comrade.prototype.draw = function() {
 	g_g.ctx.stroke();
 
 
-	g_g.ctx.fillStyle = this.color.eye;
-	g_g.ctx.strokeStyle = this.color.eye;
+	g_g.ctx.fillStyle = this.color.eye.max.rgb;
+	g_g.ctx.strokeStyle = this.color.eye.max.rgb;
 
 	var pos = disDir(this.xReal, this.yReal, this.eyeDis, this.eyeDir);
 
@@ -262,4 +284,6 @@ Comrade.prototype.draw = function() {
 
 	g_g.ctx.fill();
 	g_g.ctx.stroke();
+
+	g_g.ctx.globalAlpha = 1.0;
 };

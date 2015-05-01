@@ -23,10 +23,30 @@ draw = function() {
 
 	g_g.camera.draw();
 
+
+	g_g.ctx.textAlign = "right";
+	drawText(g_g.ctx, [
+		String(g_g.level)
+	], "#f00", 42, "times", g_g.canvasW-15, 5);
+
+	if (g_g.player.dead) {
+		g_g.ctx.textAlign = "center";
+
+		drawText(g_g.ctx, [
+			"YOU DIED"
+		], "#b00", 100, "times", Math.floor(g_g.canvasW/2), Math.floor(g_g.canvasH/2) - Math.floor(g_g.canvasH/2)/3);
+
+		drawText(g_g.ctx, [
+			"(click to restart)"
+		], "#b00", 32, "times", Math.floor(g_g.canvasW/2), Math.floor(g_g.canvasH/2) - Math.floor(g_g.canvasH/2)/10);
+	}
+
+	g_g.ctx.textAlign = "left";
+
 	var comradeHp, comradeHpMax, comradeHpPercent, comradeChildren;
 	if (g_g.player.comrades.length > 0) {
-		comradeHp = g_g.player.comrades[0].hp;
-		comradeHpMax = g_g.player.comrades[0].hpMax;
+		comradeHp = roundFloat(g_g.player.comrades[0].hp, 2);
+		comradeHpMax = roundFloat(g_g.player.comrades[0].hpMax, 2);
 		comradeHpPercent = roundFloat(comradeHp/comradeHpMax*100, 2);
 		comradeChildren = g_g.player.comrades[0].children;
 	} else {
@@ -42,7 +62,7 @@ draw = function() {
 			"Camera: " + String(roundFloat(g_g.camera.x, 1)) + ", " + String(roundFloat(g_g.camera.y, 1)),
 			"Mouse: " + String(g_g.mouse.x) + ", " + String(g_g.mouse.y),
 			"Bullets: " + String(g_g.bullets.length),
-			"Health: " + String(comradeHp) + '/' + String(comradeHpMax) +
+			"Health: " + String(comradeHp, 2) + '/' + String(comradeHpMax, 2) +
 				"  " + String(comradeHpPercent) + '%',
 			"Children: " + String(comradeChildren)
 		], "#f00", 16, "times", 0, 0);

@@ -64,16 +64,22 @@ Bullet.prototype.checkCollision = function() {
 	var collide = false;
 
 	if (this.side !== 1) {
-		if (g_g.player.checkCollisionCircle(this.x, this.y, this.r)) {
-			collide = true;
-			g_g.player.damage(this.attack, this.parent, this.info);
-			return true;
+		var comradeCollisions = g_g.player.checkCollisionCircle (
+			this.x, this.y, this.r);
+
+		for (var i=0; i<comradeCollisions.length; ++i) {
+			if (!comradeCollisions[i].dead) {
+				g_g.player.damage(this.attack/comradeCollisions.length, this, comradeCollisions[i].index);
+
+				this.hp = 0;
+				this.dead = true;
+			}
 		}
 	}
 
 	if (this.side !== 2) {
 		for (var i=0; i<g_g.enemies.length; ++i) {
-			if (g_g.enemies[i].checkCollisionCircle(this.x, this.y, this.r)) {
+			if (!g_g.enemies.dead && g_g.enemies[i].checkCollisionCircle(this.x, this.y, this.r)) {
 				collide = true;
 
 				g_g.enemies[i].damage(this.attack, this.parent, this.info);

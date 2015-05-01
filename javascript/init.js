@@ -8,6 +8,7 @@ init = function() {
 	g_g.lastTick = new Date;
 	g_g.thisTick = new Date;
 	g_g.speed = 60/g_g.frameRate;
+	g_g.pacing = 1.15;
 
 	g_g.canvas = document.getElementById("main-canvas"),
 	g_g.ctx = g_g.canvas.getContext("2d");

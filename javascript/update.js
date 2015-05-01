@@ -29,6 +29,9 @@ update = function() {
 	if (g_g.keys.r[g_g.keyMap.p])
 		g_g.debugText = !g_g.debugText;
 
+	if (g_g.player.dead && g_g.mouse.buttons.lr)
+		reset();
+
 	draw();
 
 	g_g.mouse.buttons.lp = false;
